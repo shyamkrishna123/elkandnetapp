@@ -46,7 +46,7 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.6.0
-    Environment: 
+    environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     depends_on:
       - elasticsearch
