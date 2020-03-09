@@ -7,20 +7,24 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
-    configs:
-      - source: elastic_config
-        target: /usr/share/elasticsearch/config/elasticsearch.yml
+    
     environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
-      ELASTIC_PASSWORD: changeme
-      # Use single node discovery in order to disable production mode and avoid bootstrap checks
-      # see https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
-      discovery.type: single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - cluster.name=contextElasticSearch
+    ports: 
+      - "9300:9300"
+      - "9200:9200" 
     networks:
       - elk
     deploy:
       mode: replicated
       replicas: 1
+
+    volume:
+      - esundata:/usr/share/elasticsearch/data
 
   # logstash:
   #   image: docker.elastic.co/logstash/logstash:7.6.0
@@ -42,27 +46,21 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.6.0
+    Environment: 
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
     ports:
-      - "5601:5601"
-    configs:
-      - source: kibana_config
-        target: /usr/share/kibana/config/kibana.yml
+        - '5601:5601'
+
+    
     networks:
       - elk
     deploy:
       mode: replicated
       replicas: 1
-
-configs:
-
-  elastic_config:
-    file: ./elasticsearch/config/elasticsearch.yml
-  logstash_config:
-    file: ./logstash/config/logstash.yml
-  logstash_pipeline:
-    file: ./logstash/pipeline/logstash.conf
-  kibana_config:
-    file: ./kibana/config/kibana.yml
+volumes:
+  esundata:
 
 networks:
   elk:
