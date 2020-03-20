@@ -3,11 +3,7 @@ version: '3'
 services:
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
     environment:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -18,7 +14,7 @@ services:
       - "9300:9300"
       - "9200:9200" 
     networks:
-      - elk
+      - elk-net
     deploy:
       mode: replicated
       replicas: 1
@@ -26,36 +22,32 @@ services:
     volumes:
       - esundata:/usr/share/elasticsearch/data
 
-  # logstash:
-  #   image: docker.elastic.co/logstash/logstash:7.6.0
-  #   ports:
-  #     - "5000:5000"
-  #     - "9600:9600"
-  #   configs:
-  #     - source: logstash_config
-  #       target: /usr/share/logstash/config/logstash.yml
-  #     - source: logstash_pipeline
-  #       target: /usr/share/logstash/pipeline/logstash.conf
-  #   environment:
-  #     LS_JAVA_OPTS: "-Xmx256m -Xms256m"
-  #   networks:
-  #     - elk
-  #   deploy:
-  #     mode: replicated
-  #     replicas: 1
+  logstash:
+     image: docker.elastic.co/logstash/logstash:7.6.1
+     volumes:
+        - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+     ports:
+       - "5000:5000"
+       - "9600:9600"
+       - "3514:3514"
+     environment:
+       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+     networks:
+       - elk-net
+     deploy:
+       mode: replicated
+       replicas: 1
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.6.0
+    image: docker.elastic.co/kibana/kibana:7.6.1
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     depends_on:
       - elasticsearch
     ports:
         - '5601:5601'
-
-    
     networks:
-      - elk
+      - elk-net
     deploy:
       mode: replicated
       replicas: 1
@@ -63,5 +55,4 @@ volumes:
   esundata:
 
 networks:
-  elk:
-    driver: overlay
+  elk-net:
