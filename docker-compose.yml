@@ -37,7 +37,9 @@ services:
      deploy:
        mode: replicated
        replicas: 1
-
+     logging:
+       options:
+         max-size: "1024m"
   kibana:
     image: docker.elastic.co/kibana/kibana:7.6.1
     environment:
